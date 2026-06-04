@@ -20,9 +20,14 @@ wget -O models/yolo-football.pt \
 
 ## Run
 
+Test clips (from `data/match_test.mp4`):
+
+- `data/test_10s.mp4` — first 10 seconds (~300 frames)
+- `data/test_2min.mp4` — 2 minutes
+
 ```bash
 source .venv/bin/activate
-python -m pipeline.main --video data/test_2min.mp4
+python -m pipeline.main --video data/test_10s.mp4
 ```
 
 Output: `output/tracking_raw.csv`
