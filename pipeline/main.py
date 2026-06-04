@@ -33,6 +33,8 @@ def _tracker_yaml_path(cfg: dict) -> str:
     def fmt(value):
         if isinstance(value, bool):
             return "true" if value else "false"
+        if isinstance(value, str):
+            return value
         return str(value)
 
     path.write_text("\n".join(f"{k}: {fmt(v)}" for k, v in cfg.items()) + "\n")
@@ -182,11 +184,12 @@ def main():
             "track_high_thresh": 0.5,
             "track_low_thresh": 0.1,
             "new_track_thresh": 0.6,
-            "track_buffer": 90,
+            "track_buffer": 150,
             "match_thresh": 0.8,
             "proximity_thresh": 0.5,
-            "appearance_thresh": 0.25,
-            "with_reid": False,
+            "appearance_thresh": 0.4,
+            "with_reid": True,
+            "model": "auto",
         },
         raw_csv="output/tracking_raw.csv",
         debug_frame=args.debug_frame,
