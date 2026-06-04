@@ -11,7 +11,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Requires Python 3.10+, CUDA PyTorch, and `models/yolo11m.pt` (auto-downloaded by Ultralytics if missing).
+Requires Python 3.10+, CUDA PyTorch, and `models/yolo-football.pt` ([martinjolif YOLO11m](https://huggingface.co/martinjolif/yolo-football-player-detection)).
+
+```bash
+wget -O models/yolo-football.pt \
+  https://huggingface.co/martinjolif/yolo-football-player-detection/resolve/main/yolo-football-player-detection.pt
+```
 
 ## Run
 
@@ -34,6 +39,28 @@ python -m pipeline.main --video data/test_2min.mp4 --debug-frame 25
 
 Writes `output/debug_frame_25.jpg` (0-based frame index).
 
+## Teams (phase 2)
+
+After tracking, assign `team_id` (0 = red kit, 1 = dark kit, -1 = referee/goalkeeper) using torso BGR features, and save a team-colored debug frame:
+
+```bash
+python -m pipeline.assign_teams --video data/test_2min.mp4 --debug-frame 180
+```
+
+Output: `output/tracking_teams.csv`, `output/debug_frame_180_teams.jpg`.
+
 ## Config
 
-Edit constants in `pipeline/main.py` → `main()`: FPS, model path, device, confidence, classes, BoT-SORT `tracker` dict.
+CLI flags on `pipeline.main` (defaults tuned for wide Veo-style footage):
+
+- `--imgsz 1280` — higher resolution for distant players
+- `--conf 0.18` — lower threshold for small boxes
+- `--new-track-thresh 0.45` — accept weaker detections as new tracks
+- `--max-frames N` — process only the first N frames (quick tests)
+
+Example quick test on one frame:
+
+```bash
+python -m pipeline.main --video data/test_2min.mp4 --max-frames 182 --debug-frame 181
+python -m pipeline.assign_teams --video data/test_2min.mp4 --debug-frame 181
+```

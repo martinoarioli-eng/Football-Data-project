@@ -55,6 +55,7 @@ class DetectAndTrack:
         raw_csv: str,
         debug_frame: int | None = None,
         debug_out: str | None = None,
+        max_frames: int | None = None,
     ):
         self.fps = fps
         self.model = model
@@ -66,6 +67,7 @@ class DetectAndTrack:
         self.raw_csv = raw_csv
         self.debug_frame = debug_frame
         self.debug_out = debug_out
+        self.max_frames = max_frames
 
     def run(self, video_path: str) -> None:
         _ensure_parent(self.raw_csv)
@@ -101,6 +103,9 @@ class DetectAndTrack:
             writer = csv.writer(f)
             writer.writerow(CSV_HEADER)
             for frame_idx, result in enumerate(stream):
+                if self.max_frames is not None and frame_idx >= self.max_frames:
+                    break
+
                 if frame_idx % 300 == 0 and total_frames:
                     pct = 100.0 * frame_idx / total_frames
                     logging.info("Frame %d/%d (%.1f%%)", frame_idx, total_frames, pct)
@@ -126,10 +131,11 @@ class DetectAndTrack:
                     if track_id < 0:
                         continue
 
-                    if cls == 0:
+                    # yolo-football.pt: 0=ball, 1=goalkeeper, 2=player, 3=referee
+                    if cls in (1, 2):
                         obj_type = "player"
                         unique_ids.add(track_id)
-                    elif cls == 32:
+                    elif cls == 0:
                         obj_type = "ball"
                     else:
                         continue
@@ -155,6 +161,30 @@ class DetectAndTrack:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--video", required=True)
+    parser.add_argument("--imgsz", type=int, default=1280, help="YOLO inference size")
+    parser.add_argument(
+        "--conf",
+        type=float,
+        default=0.18,
+        help="Detection confidence threshold",
+    )
+    parser.add_argument(
+        "--new-track-thresh",
+        type=float,
+        default=0.45,
+        help="BoT-SORT: min conf to start a new track",
+    )
+    parser.add_argument(
+        "--raw-csv",
+        default="output/tracking_raw.csv",
+        help="Output CSV path",
+    )
+    parser.add_argument(
+        "--max-frames",
+        type=int,
+        default=None,
+        help="Stop after N frames (for quick tests)",
+    )
     parser.add_argument(
         "--debug-frame",
         type=int,
@@ -172,18 +202,18 @@ def main():
 
     DetectAndTrack(
         fps=29.97,
-        model="models/yolo11m.pt",
+        model="models/yolo-football.pt",
         device="cuda",
-        imgsz=640,
-        conf_threshold=0.25,
-        classes=[0, 32],
+        imgsz=args.imgsz,
+        conf_threshold=args.conf,
+        classes=[0, 1, 2],
         tracker={
             "tracker_type": "botsort",
             "fuse_score": True,
             "gmc_method": "sparseOptFlow",
             "track_high_thresh": 0.5,
             "track_low_thresh": 0.1,
-            "new_track_thresh": 0.6,
+            "new_track_thresh": args.new_track_thresh,
             "track_buffer": 150,
             "match_thresh": 0.8,
             "proximity_thresh": 0.5,
@@ -191,9 +221,10 @@ def main():
             "with_reid": True,
             "model": "auto",
         },
-        raw_csv="output/tracking_raw.csv",
+        raw_csv=args.raw_csv,
         debug_frame=args.debug_frame,
         debug_out=args.debug_out,
+        max_frames=args.max_frames,
     ).run(args.video)
 
 
