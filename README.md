@@ -22,7 +22,7 @@ wget -O models/yolo-football.pt \
 
 Test clips (from `data/match_test.mp4`):
 
-- `data/test_10s.mp4` — first 10 seconds (~300 frames)
+- `data/test_10s.mp4` — 10 s clip from 9:50–10:00 of `match_test.mp4` (~300 frames)
 - `data/test_2min.mp4` — 2 minutes
 
 ```bash
