@@ -1,6 +1,6 @@
-# Football Player Tracking
+# Football Data Project
 
-YOLO11 detection + BoT-SORT tracking on follow-cam match video. Writes per-frame boxes to CSV.
+Ball detection (SAHI + YOLOv11) and team assignment from tracking CSV.
 
 ## Setup
 
@@ -11,61 +11,39 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Requires Python 3.10+, CUDA PyTorch, and `models/yolo-football.pt` ([martinjolif YOLO11m](https://huggingface.co/martinjolif/yolo-football-player-detection)).
-
-```bash
-wget -O models/yolo-football.pt \
-  https://huggingface.co/martinjolif/yolo-football-player-detection/resolve/main/yolo-football-player-detection.pt
-```
-
-## Run
+Requires Python 3.10+ and CUDA PyTorch.
 
 Test clips (from `data/match_test.mp4`):
 
-- `data/test_10s.mp4` — 10 s clip from 9:50–10:00 of `match_test.mp4` (~300 frames)
+- `data/test_10s.mp4` — 10 s clip (~300 frames)
 - `data/test_2min.mp4` — 2 minutes
+
+## Ball detection
 
 ```bash
 source .venv/bin/activate
-python -m pipeline.main --video data/test_10s.mp4
+python ball_detection.py \
+  --video data/test_10s.mp4 \
+  --preset ball \
+  --conf 0.4 \
+  --max-frames 60 \
+  --debug-frame 25 \
+  --debug-frame 50 \
+  --slice-sizes 640,1280 \
+  --output output/ball_detection.csv
 ```
 
-Output: `output/tracking_raw.csv`
+Output: `output/ball_detection.csv`, optional debug frames `output/debug_ball_detection_N.jpg`.
 
-Columns: `frame`, `timestamp_sec`, `type` (`player` | `ball`), `player_id`, `x_center`, `y_center`, `width`, `height`, `confidence`.
+## Team assignment
 
-## Debug frame
-
-Save one annotated frame (boxes + track IDs):
+Given a tracking CSV and video, assign `team_id` per player (0 = red kit, 1 = dark kit, -1 = referee/goalkeeper) using torso BGR features:
 
 ```bash
-python -m pipeline.main --video data/test_2min.mp4 --debug-frame 25
+python assign_teams.py \
+  --video data/test_2min.mp4 \
+  --csv output/tracking_raw.csv \
+  --debug-frame 180
 ```
 
-Writes `output/debug_frame_25.jpg` (0-based frame index).
-
-## Teams (phase 2)
-
-After tracking, assign `team_id` (0 = red kit, 1 = dark kit, -1 = referee/goalkeeper) using torso BGR features, and save a team-colored debug frame:
-
-```bash
-python -m pipeline.assign_teams --video data/test_2min.mp4 --debug-frame 180
-```
-
-Output: `output/tracking_teams.csv`, `output/debug_frame_180_teams.jpg`.
-
-## Config
-
-CLI flags on `pipeline.main` (defaults tuned for wide Veo-style footage):
-
-- `--imgsz 1280` — higher resolution for distant players
-- `--conf 0.18` — lower threshold for small boxes
-- `--new-track-thresh 0.45` — accept weaker detections as new tracks
-- `--max-frames N` — process only the first N frames (quick tests)
-
-Example quick test on one frame:
-
-```bash
-python -m pipeline.main --video data/test_2min.mp4 --max-frames 182 --debug-frame 181
-python -m pipeline.assign_teams --video data/test_2min.mp4 --debug-frame 181
-```
+Output: `output/tracking_teams.csv`, optional `output/debug_frame_180_teams.jpg`.

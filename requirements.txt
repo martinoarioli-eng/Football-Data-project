@@ -3,3 +3,7 @@ numpy>=1.24.0,<2.0.0
 ultralytics>=8.3.114
 lap>=0.5.12
 opencv-python>=4.9.0
+sahi>=0.12.1
+supervision>=0.28.0
+huggingface_hub>=0.20.0
+pyyaml>=6.0
