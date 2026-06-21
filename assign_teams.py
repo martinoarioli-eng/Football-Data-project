@@ -170,25 +170,29 @@ def _write_csv(rows: list[dict], team_by_player: dict[int, int], out_path: str) 
     _ensure_parent(out_path)
     with open(out_path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(CSV_OUT_HEADER)
+        extra_cols = []
+        if rows and "ball_predicted" in rows[0]:
+            extra_cols = ["ball_predicted"]
+        writer.writerow(CSV_OUT_HEADER + extra_cols)
         for row in rows:
             team_id = ""
             if row["type"] == "player":
                 team_id = team_by_player.get(int(row["player_id"]), 0)
-            writer.writerow(
-                [
-                    row["frame"],
-                    row["timestamp_sec"],
-                    row["type"],
-                    row["player_id"],
-                    row["x_center"],
-                    row["y_center"],
-                    row["width"],
-                    row["height"],
-                    row["confidence"],
-                    team_id,
-                ]
-            )
+            out_row = [
+                row["frame"],
+                row["timestamp_sec"],
+                row["type"],
+                row["player_id"],
+                row["x_center"],
+                row["y_center"],
+                row["width"],
+                row["height"],
+                row["confidence"],
+                team_id,
+            ]
+            for col in extra_cols:
+                out_row.append(row.get(col, ""))
+            writer.writerow(out_row)
 
 
 def _save_team_debug_frame(

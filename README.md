@@ -18,6 +18,44 @@ Test clips (from `data/match_test.mp4`):
 - `data/test_10s.mp4` — 10 s clip (~300 frames)
 - `data/test_2min.mp4` — 2 minutes
 
+## Unified pipeline (player + ball)
+
+Single pass: BoT-SORT player tracking + SAHI ball detection + temporal ball filter + team assignment.
+
+```bash
+source .venv/bin/activate
+python run_pipeline.py \
+  --video data/test_10s.mp4 \
+  --ball-conf 0.25 \
+  --slice-sizes 640,1280 \
+  --debug-frame 25 \
+  --debug-frame 50 \
+  --output output/unified.csv
+```
+
+Output: `output/unified.csv` with one row per player and one ball row per frame (when tracked).
+
+Columns: `frame`, `timestamp_sec`, `type`, `player_id`, `team_id`, `x_center`, `y_center`, `width`, `height`, `confidence`, `ball_predicted`.
+
+## Tactical roles (9v9)
+
+Post-process `unified.csv` into canonical player IDs + stable fine tactical roles:
+
+```bash
+source .venv/bin/activate
+python tactical_roles.py \
+  --csv output/unified.csv \
+  --video data/test_10s.mp4 \
+  --output output/unified_roles.csv \
+  --debug-frame 150
+```
+
+- Merges fragmented BoT-SORT tracks into `canonical_id` (~10 per team in 9v9).
+- Attack direction deduced per team from relative mean-x (no homography).
+- Roles aggregated over time, fine-grained: `TS/DC/TD` (def), `MZ/MED` (mid), `AS/PC/AD` (att), `POR`, `ARB`.
+
+Output: `output/unified_roles.csv` (adds `canonical_id`, `role`), `output/debug_roles_N.jpg` (team colors + role + ball).
+
 ## Player tracking
 
 ```bash
