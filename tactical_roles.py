@@ -360,11 +360,12 @@ def run(args) -> None:
     _write_csv(rows, canonical, roles, referees, out_csv)
     logging.info("Wrote %s", out_csv)
 
-    if args.debug_frame is not None:
+    if args.debug_frame:
         out_rows = list(csv.DictReader(open(out_csv, newline="")))
-        out = args.debug_out or str(ROOT / f"output/debug_roles_{args.debug_frame}.jpg")
-        _draw(out_rows, args.video, args.debug_frame, out)
-        logging.info("Debug image saved: %s", out)
+        for frame_idx in args.debug_frame:
+            out = args.debug_out or str(ROOT / f"output/debug_roles_{frame_idx}.jpg")
+            _draw(out_rows, args.video, frame_idx, out)
+            logging.info("Debug image saved: %s", out)
 
 
 def main() -> None:
@@ -380,7 +381,12 @@ def main() -> None:
     p.add_argument("--min-frames", type=int, default=20, help="Drop tracks shorter than this")
     p.add_argument("--gk-gap", type=float, default=0.12,
                    help="Min depth gap (fraction of frame width) to flag deepest player as GK")
-    p.add_argument("--debug-frame", type=int, default=None)
+    p.add_argument(
+        "--debug-frame",
+        type=int,
+        action="append",
+        help="Save annotated JPG for frame index (repeatable, 0-based)",
+    )
     p.add_argument("--debug-out", default=None)
     args = p.parse_args()
 
