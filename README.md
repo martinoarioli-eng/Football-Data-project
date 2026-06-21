@@ -1,6 +1,6 @@
 # Football Data Project
 
-Ball detection (SAHI + YOLOv11) and team assignment from tracking CSV.
+Player tracking (YOLO + BoT-SORT), ball detection (SAHI + YOLOv11), and team assignment.
 
 ## Setup
 
@@ -17,6 +17,22 @@ Test clips (from `data/match_test.mp4`):
 
 - `data/test_10s.mp4` — 10 s clip (~300 frames)
 - `data/test_2min.mp4` — 2 minutes
+
+## Player tracking
+
+```bash
+source .venv/bin/activate
+python player_tracking.py \
+  --video data/test_10s.mp4 \
+  --conf 0.25 \
+  --max-frames 300 \
+  --debug-frame 150 \
+  --output output/tracking_raw.csv
+```
+
+Output: `output/tracking_raw.csv`, optional `output/debug_tracking_N.jpg`.
+
+Uses the **soccana** preset (YOLOv11n, player class) with BoT-SORT + ReID.
 
 ## Ball detection
 
